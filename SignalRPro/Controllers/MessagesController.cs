@@ -34,7 +34,7 @@ namespace SignalRPro.Controllers
         {
             string currentUserId = User.Identity.GetUserId();
             ApplicationUser currentUser = db.Users.FirstOrDefault(x => x.Id == currentUserId);
-            var collection = db.Messages.Where(x=>x.ApplicationUser.UserName== currentUser.UserName&&!x.Status);
+            var collection = db.Messages.Where(x=>!x.Status);
             return Json(collection.ToListAsync());
         }
 
