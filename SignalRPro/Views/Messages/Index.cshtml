@@ -1,0 +1,93 @@
+﻿@using Microsoft.AspNet.Identity
+@model IEnumerable<SignalRPro.Models.Messages>
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Index</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table" id="messageTable">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.Message)
+        </th>
+        @*<th></th>*@
+    </tr>
+    <tbody id="content">
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Message)
+                </td>
+                @*<td>
+                        @Html.ActionLink("Edit", "Edit", new {id = item.Id}) |
+                        @Html.ActionLink("Details", "Details", new {id = item.Id}) |
+                        @Html.ActionLink("Delete", "Delete", new {id = item.Id})
+                    </td>*@
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section scripts {
+
+    <script src="~/Scripts/jquery.signalR-2.2.3.min.js"></script>
+    <script src="~/signalr/hubs"></script>
+
+    <script type="text/javascript">
+        var signalRHubInitialized = false;
+
+        $(function () {
+            InitializeSignalRHubStore();
+        });
+
+        function InitializeSignalRHubStore() {
+
+            if (signalRHubInitialized)
+                return;
+
+            try {
+                var clientHub = $.connection.messageHub;
+
+                clientHub.client.broadcastMessage = function (message) {
+                    if (message === "Refresh")
+                        ReloadIndexPartial();
+                };
+
+                $.connection.hub.start().done(function () {
+                    clientHub.server.initialize("@User.Identity.GetUserId()");
+                    signalRHubInitialized = true;
+                });
+
+            } catch (err) {
+                signalRHubInitialized = false;
+            }
+        };
+
+        function ReloadIndexPartial() {
+
+            $.post('/Messages/GetMessages')
+                .done(function (response) {
+                    
+                    if (response.Result.length > 0) {
+                        $("#messageTable #content").empty();
+                    }
+                    for (var i = 0; i < response.Result.length; i++) {
+                        $("#messageTable #content").append("<tr><td>" + response.Result[i].Message + "</td></tr>");
+                    }
+                    console.log("database updated");
+                    console.log("signalRHubInitialized", signalRHubInitialized);
+                    
+                   // $("#tbProducts").html(response)
+                    if (!signalRHubInitialized)
+                        InitializeSignalRHubStore();
+                });
+        };
+    </script>
+}
